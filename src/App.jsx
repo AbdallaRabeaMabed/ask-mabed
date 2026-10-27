@@ -30,7 +30,10 @@ function App() {
   useEffect(() => {
     if (!supabase) return undefined
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+      if (nextSession && (window.location.hash === '#/login' || window.location.hash === '')) window.location.hash = '#/dashboard'
+    })
     return () => listener.subscription.unsubscribe()
   }, [])
 
@@ -192,7 +195,7 @@ function Dashboard({ session, profile, questions, loading, notice, onNotice, onR
     if (error) throw error
     onRefresh()
   }
-  return <section className="dashboard"><div className="dashboard-head"><div><span className="eyebrow">YOUR INBOX</span><h1>Good to see you, {profile?.display_name || 'friend'}.</h1><p>Share your page and let the good questions in.</p></div>{profile?.username && <a className="button button-outline" href={`#/profile/${profile.username}`}>View my page ↗</a>}</div>{notice && <p className="error">{notice}</p>}<div className="inbox-bar"><strong>{unansweredCount} unanswered {unansweredCount === 1 ? 'question' : 'questions'}</strong><button className="text-button" onClick={onRefresh}>Refresh</button></div><div className="question-list">{displayedQuestions.length ? displayedQuestions.map((question) => <article className={`inbox-card ${question.status}`} key={question.id}><div className="question-meta"><span className="anon-dot">◌</span> anonymous <time>{question.created_at.slice(0, 10)}</time></div><p>{question.message}</p>{question.answer ? <div className="answer"><b>Your answer</b><p>{question.answer}</p><ShareAnswer questionId={question.id} /></div> : <AnswerEditor onSave={(answer) => saveAnswer(question.id, answer)} />}<div className="card-status">{question.status === 'pending' ? 'Waiting for your answer' : question.status}</div></article>) : <div className="empty-state"><span>✦</span><h2>Your inbox is quiet.</h2><p>Share your profile link to start receiving questions.</p></div>}</div></section>
+  return <section className="dashboard"><div className="dashboard-head"><div><span className="eyebrow">YOUR INBOX</span><h1>Good to see you, {profile?.display_name || 'friend'}.</h1><p>Share your page and let the good questions in.</p></div>{profile?.username && <a className="button button-outline" href={`#/profile/${profile.username}`}>View my page ↗</a>}</div>{profile?.username && <div className="profile-link-box"><div><span className="eyebrow">YOUR PUBLIC PAGE</span><strong>{window.location.origin}{window.location.pathname}#/profile/{profile.username}</strong></div><a className="button button-small" href={`#/profile/${profile.username}`}>Ask a question ↗</a></div>}{notice && <p className="error">{notice}</p>}<div className="inbox-bar"><strong>{unansweredCount} unanswered {unansweredCount === 1 ? 'question' : 'questions'}</strong><button className="text-button" onClick={onRefresh}>Refresh</button></div><div className="question-list">{displayedQuestions.length ? displayedQuestions.map((question) => <article className={`inbox-card ${question.status}`} key={question.id}><div className="question-meta"><span className="anon-dot">◌</span> anonymous <time>{question.created_at.slice(0, 10)}</time></div><p>{question.message}</p>{question.answer ? <div className="answer"><b>Your answer</b><p>{question.answer}</p><ShareAnswer questionId={question.id} /></div> : <AnswerEditor onSave={(answer) => saveAnswer(question.id, answer)} />}<div className="card-status">{question.status === 'pending' ? 'Waiting for your answer' : question.status}</div></article>) : <div className="empty-state"><span>✦</span><h2>Your inbox is quiet.</h2><p>Share your profile link so people can ask you a question. When a question arrives, the answer box will appear here.</p><a className="button button-small" href={`#/profile/${profile.username}`}>Open my question page ↗</a></div>}</div></section>
 }
 
 function PublicAnswer({ answer, profile, loading, notice }) {
