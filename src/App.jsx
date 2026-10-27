@@ -10,6 +10,7 @@ const demoQuestions = [
 function getRoute() {
   const hash = window.location.hash.replace(/^#\/?/, '')
   const parts = hash.split('/').filter(Boolean)
+  if (parts[0]?.includes('access_token') || parts[0]?.includes('refresh_token') || parts[0]?.includes('token_hash') || parts[0] === 'code') return { page: 'home' }
   return { page: parts[0] || 'home', username: parts[1] }
 }
 
@@ -29,7 +30,10 @@ function App() {
 
   useEffect(() => {
     if (!supabase) return undefined
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      if (data.session && (window.location.hash === '#/login' || window.location.hash === '' || window.location.hash.includes('access_token') || window.location.search.includes('code='))) window.location.hash = '#/dashboard'
+    })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
       if (nextSession && (window.location.hash === '#/login' || window.location.hash === '')) window.location.hash = '#/dashboard'
